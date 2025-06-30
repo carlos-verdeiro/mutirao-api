@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/config/env.php';
 require_once __DIR__ . '/config/cors.php';
+require_once __DIR__ . '/config/db.php';
 
 use FastRoute\RouteCollector;
 
+header('Content-Type: application/json; charset=UTF-8');
+
 // deve passar a classe completa,exemplo:
-// $r->get('/Controllers/teste', 'App\Controllers\teste@listar');
+// $r->get('/teste', 'App\Controllers\teste@listar');
 function resolveHandler($handler) { 
     if (is_string($handler) && strpos($handler, '@') !== false) {
         list($class, $method) = explode('@', $handler);
@@ -18,9 +20,8 @@ function resolveHandler($handler) {
     }
     return $handler;
 }
-
 $dispatcher = FastRoute\simpleDispatcher(function (RouteCollector $r) {
-    require_once __DIR__ . '/routes/routes.php'; // Carrega as rotas
+require_once __DIR__ . '/routes/routes.php'; // Carrega as rotas
 });
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -59,8 +60,13 @@ switch ($routeInfo[0]) {
         break;
 
     case FastRoute\Dispatcher::FOUND:
-        $handler = resolveHandler($routeInfo[1]); // controlador
-        $vars = $routeInfo[2];
-        call_user_func_array($handler, $vars);
+        try {
+            $handler = resolveHandler($routeInfo[1]); // controlador
+            $vars = $routeInfo[2];
+            call_user_func_array($handler, $vars);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['erro' => 'Falha ao processar a requisição', 'detalhe' => $e->getMessage()]);
+        }
         break;
 }
