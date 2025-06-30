@@ -1,9 +1,10 @@
 <?php
-
-$r->addRoute('GET', '/ping', function () {// teste de ping
-    header('Content-Type: application/json; charset=UTF-8');
+// Teste de ping
+$r->addRoute('GET', '/ping', function () {
     http_response_code(200);
     echo json_encode(['mensagem' => 'pong']);
 });
 
-$r->get('/teste', 'App\Controllers\teste@mostrar');
+// CONTRIBUIDORES
+    //Público
+$r->post('/login', 'App\Controllers\Contribuidor@login');
