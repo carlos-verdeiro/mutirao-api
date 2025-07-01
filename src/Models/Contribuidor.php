@@ -10,7 +10,7 @@ class Contribuidor {
         return $stmt->fetch();
     }
 
-    public function gerarToken($id, $plataforma) {
+    public function iniciarSessao($id, $plataforma) {
         $geradorAleatorio = new \App\Helpers\GeradorAleatorio();
         $token = $geradorAleatorio->token();
 
@@ -18,7 +18,7 @@ class Contribuidor {
         $status = 'ativo';
 
         global $pdo;
-        $stmt = $pdo->prepare('INSERT INTO tokens (colaborador_id, token, plataforma, expiracao, status) VALUES (:id, :token, :plataforma, :expiracao, :status)');
+        $stmt = $pdo->prepare('INSERT INTO sessoes (colaborador_id, token, plataforma, expira_em, status) VALUES (:id, :token, :plataforma, :expiracao, :status)');
         $stmt->bindParam(':id', $id);
         $stmt->bindParam(':token', $token);
         $stmt->bindParam(':plataforma', $plataforma);
@@ -35,5 +35,14 @@ class Contribuidor {
             // Falha ao inserir o token
             return false;
         }
+    }
+
+    public function finalizarSessao($token) {
+        global $pdo;
+        $stmt = $pdo->prepare('UPDATE sessoes SET status = :status WHERE token = :token');
+        $status = 'finalizado';
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':token', $token);
+        return $stmt->execute();
     }
 }

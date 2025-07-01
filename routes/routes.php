@@ -8,3 +8,9 @@ $r->addRoute('GET', '/ping', function () {
 // CONTRIBUIDORES
     //Público
 $r->post('/login', 'App\Controllers\Contribuidor@login');
+    //Privado
+$r->post('/logout', [
+'App\Middlewares\ValidaEntrada@logout', 
+'App\Middlewares\Autenticacao@handle', 
+'App\Controllers\Contribuidor@logout'
+]);

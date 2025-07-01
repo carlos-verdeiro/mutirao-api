@@ -20,6 +20,18 @@ function resolveHandler($handler) {
     }
     return $handler;
 }
+
+function multiHandler($handlers, $vars = []) {
+    foreach ($handlers as $handler) {
+        $callable = resolveHandler($handler);
+        $result = call_user_func_array($callable, $vars);
+        // Se algum middleware der exit ou retornar false, para aqui
+        if ($result === false) {
+            break;
+        }
+    }
+}
+
 $dispatcher = FastRoute\simpleDispatcher(function (RouteCollector $r) {
 require_once __DIR__ . '/routes/routes.php'; // Carrega as rotas
 });
@@ -61,9 +73,13 @@ switch ($routeInfo[0]) {
 
     case FastRoute\Dispatcher::FOUND:
         try {
-            $handler = resolveHandler($routeInfo[1]); // controlador
-            $vars = $routeInfo[2];
-            call_user_func_array($handler, $vars);
+            $handlers = $routeInfo[1];
+            if (is_array($handlers)) {//encadear vários handers
+                multiHandler($handlers, $routeInfo[2]);
+            } else {
+                $handler = resolveHandler($handlers);
+                call_user_func_array($handler, $routeInfo[2]);
+            }
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['erro' => 'Falha ao processar a requisição', 'detalhe' => $e->getMessage()]);

@@ -7,13 +7,13 @@ class Contribuidor {
         try {
             
             $dados = json_decode(file_get_contents('php://input'), true);
-            $usuario = $dados['usuario'] ?? '';
-            $senha = $dados['senha'] ?? '';
-            $plataforma = $dados['plataforma'] ?? '';
+            $usuario = $dados['usuario'] ?? null;
+            $senha = $dados['senha'] ?? null;
+            $plataforma = $dados['plataforma'] ?? null;
             if (empty($usuario) || empty($senha)) {
                 http_response_code(400);
                 echo json_encode(['erro' => 'Usuário e senha são obrigatórios']);
-                return;
+                return false;
             }
 
             // Verificar no DB
@@ -23,7 +23,13 @@ class Contribuidor {
             if (!$usuario) {
                 http_response_code(401);
                 echo json_encode(['erro' => 'Usuário não encontrado']);
-                return;
+                return false;
+            }
+
+            if ($usuario['status'] !== 'ativo') {
+                http_response_code(401);
+                echo json_encode(['erro' => 'Usuário desativado']);
+                return false;
             }
 
             $validaSenhaHelper = new \App\Helpers\ValidaSenha();
@@ -31,7 +37,7 @@ class Contribuidor {
                 // Se a senha não for válida, retorna erro
                 http_response_code(401);
                 echo json_encode(['erro' => 'Senha incorreta']);
-                return;
+                return false;
             }
 
             // Valida plataforma
@@ -40,21 +46,48 @@ class Contribuidor {
             // Tenta gerar o token até 5 vezes se falhar
             $tentativas = 0;
             do {
-                $sessao = $contribuidorModel->gerarToken($usuario['id'], $plataforma);
+                $sessao = $contribuidorModel->iniciarSessao($usuario['id'], $plataforma);
                 $tentativas++;
             } while (!$sessao['token'] && $tentativas < 5);
 
             if (!$sessao['token']) {
                 http_response_code(500);
                 echo json_encode(['erro' => 'Erro ao gerar token']);
-                return;
+                return false;
             }
 
             // Retorna o usuário sem a senha
             http_response_code(200);
             unset($usuario['senha']);
             echo json_encode(['mensagem' => 'logado!', 'usuario' => $usuario, 'sessao' => $sessao]); // Expira em 5 horas     
-            
+            return true;
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['erro' => 'Erro interno no servidor', 'detalhe' => $e->getMessage()]);
+        }
+    }
+
+    public function logout() {//adicionar a verificação se tem cadastro de participante que veio junto
+        try {
+            $dados = \App\Helpers\CapturaDados::json();
+
+            $contribuidorModel = new \App\Models\Contribuidor();
+            $fSessao = $contribuidorModel->finalizarSessao($dados['token']);
+
+            if ($fSessao === true) {
+                http_response_code(200);
+                echo json_encode(['mensagem' => 'Sessão encerrada com sucesso']);
+                return true;
+            } elseif ($fSessao === false) {
+                http_response_code(400);
+                echo json_encode(['erro' => 'Sessão não encontrada']);
+                return false;
+            } else {
+                // Se houve erro na execução da query
+                http_response_code(500);
+                echo json_encode(['erro' => 'Erro ao encerrar sessão']);
+                return false;
+            }
         } catch (\Throwable $e) {
             http_response_code(500);
             echo json_encode(['erro' => 'Erro interno no servidor', 'detalhe' => $e->getMessage()]);

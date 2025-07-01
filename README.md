@@ -14,6 +14,7 @@ API em PHP para registro e sorteio dos participantes do Mutirão do Lixo Eletrô
 - `routes/` definição de rotas e classes
 - `src/` contém os módulos
     - `Controllers/`
+    - `Helpers/`
     - `Middlewares/`
     - `Models/`
 - `.env.example` renomeie para `.env` e use como variável de sistema
