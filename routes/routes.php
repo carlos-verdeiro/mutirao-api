@@ -14,3 +14,9 @@ $r->post('/logout', [
 'App\Middlewares\Autenticacao@handle', 
 'App\Controllers\Contribuidor@logout'
 ]);
+
+$r->post('/participante/cadastro', [
+'App\Middlewares\ValidaEntrada@participanteCadastro', 
+'App\Middlewares\Autenticacao@handle', 
+'App\Controllers\Participante@cadastro'
+]);

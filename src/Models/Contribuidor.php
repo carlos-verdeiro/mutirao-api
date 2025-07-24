@@ -10,11 +10,25 @@ class Contribuidor {
         return $stmt->fetch();
     }
 
-    public function iniciarSessao($id, $plataforma) {
-        $geradorAleatorio = new \App\Helpers\GeradorAleatorio();
-        $token = $geradorAleatorio->token();
+    public function buscarPorToken($token) {
+        global $pdo; // Usa a conexão PDO definida no arquivo de configuração
+        $stmt = $pdo->prepare('SELECT * 
+            FROM colaboradores 
+            INNER JOIN sessoes 
+            ON colaboradores.id = sessoes.colaborador_id
+            WHERE sessoes.token = :token;
+            ');
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
 
-        $expiracao = date('Y-m-d H:i:s', strtotime('+5 hour')); // Expira em 5 horas
+    public function iniciarSessao($id, $plataforma) {
+        $gerador_aleatorio = new \App\Helpers\GeradorAleatorio();
+        $token = $gerador_aleatorio->token();
+
+        $tempo_expiracao = 5;
+        $expiracao = date('Y-m-d H:i:s', strtotime("+$tempo_expiracao hour")); // Expira conforme sess_exp
         $status = 'ativo';
 
         global $pdo;

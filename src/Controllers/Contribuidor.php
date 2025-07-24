@@ -6,7 +6,7 @@ class Contribuidor {
         
         try {
             
-            $dados = json_decode(file_get_contents('php://input'), true);
+            $dados = \App\Helpers\Dados::getDados();
             $usuario = $dados['usuario'] ?? null;
             $senha = $dados['senha'] ?? null;
             $plataforma = $dados['plataforma'] ?? null;
@@ -69,7 +69,7 @@ class Contribuidor {
 
     public function logout() {//adicionar a verificação se tem cadastro de participante que veio junto
         try {
-            $dados = \App\Helpers\CapturaDados::json();
+            $dados = \App\Helpers\Dados::getDados();
 
             $contribuidorModel = new \App\Models\Contribuidor();
             $fSessao = $contribuidorModel->finalizarSessao($dados['token']);
