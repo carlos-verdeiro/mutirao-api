@@ -7,7 +7,18 @@ class Dados {
     private static array $usuario = [];
 
     private static function jsonInput() {
+        
         $dados = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? '';
+
+        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            $dados['token'] = $matches[1];
+        } else {
+            $dados['token'] = null;
+        }
+
         return $dados;
     }
 

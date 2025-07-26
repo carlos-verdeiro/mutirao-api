@@ -27,7 +27,7 @@ class Contribuidor {
             }
 
             if ($usuario['status'] !== 'ativo') {
-                http_response_code(401);
+                http_response_code(403);
                 echo json_encode(['erro' => 'Usuário desativado']);
                 return false;
             }
@@ -54,12 +54,19 @@ class Contribuidor {
                 http_response_code(500);
                 echo json_encode(['erro' => 'Erro ao gerar token']);
                 return false;
+            }else{
+                $sessao['tipo'] = "Bearer";
             }
 
             // Retorna o usuário sem a senha
             http_response_code(200);
             unset($usuario['senha']);
-            echo json_encode(['mensagem' => 'logado!', 'usuario' => $usuario, 'sessao' => $sessao]); // Expira em 5 horas     
+            echo json_encode([
+                'token' => $sessao['token'],
+                'tipo' => 'Bearer',
+                'expira_em' => $sessao['expiracao'],
+                'usuario' => $usuario
+            ]); // Expira em 5 horas     
             return true;
         } catch (\Throwable $e) {
             http_response_code(500);
