@@ -22,7 +22,7 @@ class TratamentoEntrada {
         }
     }
 
-    function normalizarTexto($texto) {
+    public function normalizarTexto($texto) {
     $texto = trim($texto);
     $texto = mb_strtolower($texto, 'UTF-8');
 

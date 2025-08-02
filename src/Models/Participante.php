@@ -50,6 +50,63 @@ class Participante {
         return ['status' => $status, 'quantidade_inseridos' => $quantidadeInseridos];
     }
 
+    public function editar($colaborador_id, $participantes, $status) {
+        $quantidadeEditados = 0;
+        global $pdo;
+        $modelCidade = new \App\Models\Cidade();
+        foreach ($participantes as $index => $participante) {
+            try {
+                if(!empty($participante['edicoes']['numero']) && $this->numeroJaCadastrado($participante['edicoes']['numero'])) {
+                    $status[$index]['inserido'] = false;
+                    $status[$index]['erros']['numero'] = 'Número já utilizado no sistema';
+                }else if ($status[$index]['valido'] === true && empty($status[$index]['erros'])) {
+                    $sql = "UPDATE participantes SET " ;
+                    $updates = [];
+                    
+                    $edicoesFiltradas = $this->filtrarCamposPermitidos($participante['edicoes']);
+                    if(!empty($edicoesFiltradas['cidade']))
+                    {
+                        $cidade_id = $modelCidade->obterOuInserir($edicoesFiltradas['cidade'], $colaborador_id);
+                        $edicoesFiltradas['cidade_id'] = $cidade_id;
+                        unset($edicoesFiltradas['cidade']);
+                    }
+
+                    foreach ($edicoesFiltradas as $key => $value) {
+                        $updates[] = "$key = :$key";
+                    }
+
+                    $sql .= implode(", ", $updates);
+                    $sql .= " WHERE id = :id_externo AND colaborador_id = :colaborador_id";
+
+                    $stmt = $pdo->prepare($sql);
+
+                    $id = $participante['id_externo'];
+                    $stmt->bindParam(':id_externo', $id);
+                    $stmt->bindParam(':colaborador_id', $colaborador_id);
+                    foreach ($edicoesFiltradas as $key => $value) {
+                        $stmt->bindValue(":$key", $value);
+                    }
+                    if ($stmt->execute()) {
+                        $status[$index]['editado'] = true;
+                        $quantidadeEditados++;
+                    } else {
+                        $status[$index]['editado'] = false;
+                        $status[$index]['erros']['edicao'] = $stmt->errorInfo();
+                    }
+                    
+                }else 
+                {
+                    $status[$index]['editado'] = false;
+                }
+            } catch (\Exception $e) {
+                $status[$index]['editado'] = false;
+                $status[$index]['erros']['insercao'] = $e->getMessage();
+            }
+        }
+
+        return ['status' => $status, 'quantidade_editados' => $quantidadeEditados];
+    }
+
     private function numeroJaCadastrado($numero) {
         global $pdo;
         $stmt = $pdo->prepare('SELECT 1 FROM participantes WHERE numero = :numero LIMIT 1');
@@ -57,4 +114,11 @@ class Participante {
         $stmt->execute();
         return $stmt->fetchColumn() > 0;
     }
+
+    private function filtrarCamposPermitidos($dados) {
+    $camposProibidos = ['id_externo', 'colaborador_id', 'hora_cadastro_app', 'hora_insert', 'id'];
+    return array_filter($dados, function($key) use ($camposProibidos) {
+        return !in_array($key, $camposProibidos);
+    }, ARRAY_FILTER_USE_KEY);
+}
 }

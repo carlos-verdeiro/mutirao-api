@@ -20,3 +20,9 @@ $r->post('/participante/cadastro', [
 'App\Middlewares\Autenticacao@handle', 
 'App\Controllers\Participante@cadastro'
 ]);
+
+$r->patch('/participante/editar', [
+'App\Middlewares\ValidaEntrada@participanteEditar', 
+'App\Middlewares\Autenticacao@handle', 
+'App\Controllers\Participante@editar'
+]);
